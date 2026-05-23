@@ -1,3 +1,4 @@
+import AudioRecorder from "../components/AudioRecorder";
 import HistoryItem from "../components/HistoryItem";
 import { useGetInfiniteHistory } from "../hooks/APIHooks";
 
@@ -31,6 +32,8 @@ export default function STTChat() {
                     </>
                 )
             }
+
+            <AudioRecorder />
         </div>
     )
 }
