@@ -12,15 +12,33 @@ export interface History {
     createdAt: string
 }
 
+export interface HistoryResponse {
+    cursorBefore: number | null,
+    cursorAfter: number | null,
+    size: number,
+    histories: History[]
+}
 
-export function getHistory(page: number, size: number = 20): Promise<History[]> {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            api.get<History[]>(`/history?page=${page}&size=${size}`)
-            .then(response => {
-                resolve(response.data)
-            })
-            .catch(reject)
-        }, 3000)
-    })
+export interface HistoryQuery {
+    before?: number,
+    after?: number,
+    first: number,
+}
+
+
+export async function getHistory({ before, after, first }: HistoryQuery): Promise<HistoryResponse> {
+    let url = `/history?first=${first}`
+    if (after) {
+        url += `&after=${after}`
+    }
+    else if (before) {
+        url += `&before=${before}`
+    }
+
+    const res = await api.get<HistoryResponse>(url)
+    return res.data
+}
+
+export function transcribeAudio(audioUrl: string, lang?: string): Promise<History> {
+    return api.post<History>("", { audioUrl, lang }).then(response => response.data);
 }

@@ -33,11 +33,11 @@ export interface AudioRecorderOptions {
 
     onData?: (blob: Blob)=> Promise<void>,
 
-    onStop?: (output: AudioRecordOutput)=> void
+    onStop?: (output: AudioRecordOutput)=> Promise<void>
 }
 
 
-export function useAudioRecorder(options: AudioRecorderOptions = { stream: false }): AudioRecorderControl {
+export function useAudioRecorder(options: AudioRecorderOptions): AudioRecorderControl {
     const streamRef = useRef(null)
     const recorderRef = useRef<MediaRecorder>(null)
     const dataRef = useRef<Blob[]>([])
@@ -83,7 +83,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = { stream: false
                     dataRef.current.push(data)
                     dataSizeRef.current = dataSizeRef.current + data.size
 
-                    if (options.stream && dataSizeRef.current >= Math.min(options.bufferSize, MAX_DATA_SIZE)) {
+                    if (options.stream && dataSizeRef.current >= Math.min(options.bufferSize ?? MAX_DATA_SIZE, MAX_DATA_SIZE)) {
                             const blob = combineData()
                             options.onData?.(blob)
 
@@ -105,7 +105,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = { stream: false
             })
 
             recorder.addEventListener('stop', () => {
-                stream.getTracks().forEach(t => t.stop)
+                stream.getTracks().forEach(t => t.stop())
                 streamRef.current = null
 
                 const currentState = state

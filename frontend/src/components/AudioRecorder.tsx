@@ -4,7 +4,7 @@ import { useAudioRecorder, type AudioRecordOutput } from '../hooks/AudioRecorder
 
 export default function AudioRecorder() {
 
-    const [audioOutput, setAudioOutput] = useState<AudioRecordOutput>(null)
+    const [audioOutput, setAudioOutput] = useState<AudioRecordOutput | null>(null)
     
 
     const { 
