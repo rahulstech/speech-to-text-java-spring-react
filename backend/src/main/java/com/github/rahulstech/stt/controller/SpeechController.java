@@ -1,6 +1,8 @@
 package com.github.rahulstech.stt.controller;
 
 import com.github.rahulstech.stt.dto.GenerateTextRequest;
+import com.github.rahulstech.stt.dto.HistoryQuery;
+import com.github.rahulstech.stt.dto.HistoryResponse;
 import com.github.rahulstech.stt.model.Transcription;
 import com.github.rahulstech.stt.service.SpeechToTextService;
 import com.github.rahulstech.stt.service.TranscriptionService;
@@ -8,10 +10,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/speech")
+@CrossOrigin("*")
 public class SpeechController {
 
     @Autowired
@@ -40,10 +41,9 @@ public class SpeechController {
     }
 
     @GetMapping("/history")
-    public List<Transcription> getHistory(
-            @RequestParam(name = "page", defaultValue = "1") int pageNumber,
-            @RequestParam(name = "size", defaultValue = "20") int pageSize
+    public HistoryResponse getHistory(
+            @Valid HistoryQuery query
     ) {
-        return transcriptionService.getTranscriptions(pageNumber, pageSize);
+        return transcriptionService.getTranscriptions(query);
     }
 }

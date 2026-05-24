@@ -1,10 +1,11 @@
 package com.github.rahulstech.stt.service;
 
+import com.github.rahulstech.stt.dto.HistoryQuery;
+import com.github.rahulstech.stt.dto.HistoryResponse;
 import com.github.rahulstech.stt.model.Transcription;
 import com.github.rahulstech.stt.repository.TranscriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @Service
 public class TranscriptionService {
 
-    private static final int MAX_PAGE_SIZE = 20;
+    public static final int MAX_PAGE_SIZE = 20;
 
     @Autowired
     private TranscriptionRepository repo;
@@ -26,11 +27,46 @@ public class TranscriptionService {
         return repo.findById(id).orElse(null);
     }
 
-    public List<Transcription> getTranscriptions(int page, int size) {
-        var pageNumber = Math.max(0, page-1);
-        var pageSize = Math.min(MAX_PAGE_SIZE, size);
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
-        var result = repo.findAll(pageable);
-        return result.toList();
+    public HistoryResponse getTranscriptions(HistoryQuery query) {
+        var pageable = getHistoryPageRequest(query.first());
+        List<Transcription> histories;
+        Long cursor;
+        if (query.isBefore()) {
+            histories = repo.findByIdGreaterThanEqual(query.before(),pageable);
+            cursor = query.before();
+        }
+        else if (query.isAfter()) {
+            histories = repo.findByIdLessThanEqual(query.after(), pageable);
+            cursor = query.after();
+        }
+        else {
+            histories = repo.findAll(pageable).toList();
+            cursor = null;
+        }
+
+        Long cursorBefore, cursorAfter;
+        if (!histories.isEmpty()) {
+            cursorBefore = histories.getFirst().getId() + 1;
+            cursorAfter = histories.getLast().getId() - 1;
+        }
+        else if (cursor != null) {
+            cursorBefore = cursor + 1;
+            cursorAfter = cursor - 1;
+        }
+        else {
+            cursorBefore = null;
+            cursorAfter = null;
+        }
+
+        return new HistoryResponse(
+                cursorBefore,
+                cursorAfter,
+                query.first(),
+                histories
+        );
+    }
+
+    private PageRequest getHistoryPageRequest(int limit) {
+        return PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
     }
 }
