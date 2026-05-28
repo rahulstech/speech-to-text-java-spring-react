@@ -8,8 +8,18 @@ export function useGetInfiniteHistory() {
         queryKey: ["history"],
         queryFn: ({ pageParam: query }) => getHistory(query),
         initialPageParam: { first: HISTORY_SIZE },
-        getPreviousPageParam: (firstPage) => ({ before: firstPage.cursorBefore, first: HISTORY_SIZE }),
-        getNextPageParam: (lastPage) => ({ after: lastPage.cursorAfter, first: HISTORY_SIZE }),
+        getPreviousPageParam: (firstPage) => {
+            if (!firstPage || firstPage.cursorBefore == null) {
+                return undefined;
+            }
+            return { before: firstPage.cursorBefore, first: HISTORY_SIZE };
+        },
+        getNextPageParam: (lastPage) => {
+            if (!lastPage || lastPage.cursorAfter == null || lastPage.histories.length < HISTORY_SIZE) {
+                return undefined;
+            }
+            return { after: lastPage.cursorAfter, first: HISTORY_SIZE };
+        },
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         staleTime: Infinity,
@@ -19,7 +29,7 @@ export function useGetInfiniteHistory() {
 export function useTranscribeAudio() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ audioUrl, lang }: { audioUrl: string, lang?: string }) => transcribeAudio(audioUrl, lang),
+        mutationFn: transcribeAudio,
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["history"],

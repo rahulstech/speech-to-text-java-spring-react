@@ -3,8 +3,10 @@ import HistoryItem from "../components/HistoryItem";
 import AudioInputBar from "../components/AudioInputBar";
 import Icon from "../components/Icon";
 import { useGetInfiniteHistory } from "../hooks/APIHooks";
-import type { History } from "../services/SpeechService";
+import type { History } from "../services/types";
 import Waveform from "../components/Waveform";
+import { useUserLogout } from "../hooks/AuthHooks";
+import { userStorage } from "../storage/UserStorage";
 
 // Group items by day
 function groupHistoryByDate(items: History[]) {
@@ -60,6 +62,7 @@ export default function STTChat() {
     isError,
     isFetchingNextPage,
   } = useGetInfiniteHistory();
+  const logoutMutation = useUserLogout()
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -81,6 +84,14 @@ export default function STTChat() {
       )
     : [];
 
+  const hasNextPageRef = useRef(hasNextPage);
+  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+
+  useEffect(() => {
+    hasNextPageRef.current = hasNextPage;
+    isFetchingNextPageRef.current = isFetchingNextPage;
+  }, [hasNextPage, isFetchingNextPage]);
+
   // Set up intersection observer for infinite scroll / automatic page loading
   useEffect(() => {
     const sentinel = topSentinelRef.current;
@@ -90,7 +101,7 @@ export default function STTChat() {
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        if (entry.isIntersecting && hasNextPageRef.current && !isFetchingNextPageRef.current) {
           fetchNextPage();
         }
       },
@@ -105,7 +116,7 @@ export default function STTChat() {
     return () => {
       observer.unobserve(sentinel);
     };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [fetchNextPage]);
 
   const wasFetchingNextPageRef = useRef(false);
   useEffect(() => {
@@ -199,8 +210,11 @@ export default function STTChat() {
         {/* Header */}
         <div className="bg-white h-16 border-b border-slate-100 shadow-sm w-full shrink-0 z-10">
           <div className="h-full flex items-center justify-between px-6">
-            <h1 className="text-lg font-bold text-slate-800 tracking-tight">Hello user</h1>
+            <h1 className="text-lg font-bold text-slate-800 tracking-tight">
+              Hello {userStorage.get().name}
+            </h1>
             <button
+              onClick={()=> { logoutMutation.mutate() }}
               title="Logout"
               className="text-slate-600 hover:text-slate-800 transition-colors p-1.5 rounded-full hover:bg-slate-50 active:scale-95 focus:outline-none flex items-center justify-center relative group"
             >
@@ -233,8 +247,11 @@ export default function STTChat() {
       {/* Header */}
       <div className="bg-white h-16 border-b border-slate-100 shadow-sm w-full shrink-0 z-10">
         <div className="h-full flex items-center justify-between px-6">
-          <h1 className="text-lg font-bold text-slate-800 tracking-tight">Hello user</h1>
+          <h1 className="text-lg font-bold text-slate-800 tracking-tight">
+            Hello {userStorage.get()?.name ?? "user"}
+          </h1>
           <button
+            onClick={() => { logoutMutation.mutate() }}
             title="Logout"
             className="text-slate-600 hover:text-slate-800 transition-colors p-1.5 rounded-full hover:bg-slate-50 active:scale-95 focus:outline-none flex items-center justify-center relative group"
           >

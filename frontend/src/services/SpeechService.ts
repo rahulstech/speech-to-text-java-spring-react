@@ -1,29 +1,35 @@
 import axios from "axios";
+import type { HistoryQuery, HistoryResponse, History, TranscriptRequest } from "./types";
+import { accessTokenStorage } from "../storage/TokenStorage";
 
 const api = axios.create({
     baseURL: "http://localhost:8080/api/speech"
 })
 
 
-export interface History {
-    id: number,
-    audioFile: string,
-    transcript: string,
-    createdAt: string
-}
+api.interceptors.request.use((config) => {
+    const accessToken = accessTokenStorage.get()
 
-export interface HistoryResponse {
-    cursorBefore: number | null,
-    cursorAfter: number | null,
-    size: number,
-    histories: History[]
-}
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`
+    }
 
-export interface HistoryQuery {
-    before?: number,
-    after?: number,
-    first: number,
-}
+    return config
+})
+
+api.interceptors.response.use(
+    // onFulfilled
+    (response) => response,
+
+    // onRejected
+    (error) => {
+        if (error.response?.status === 401) {
+            accessTokenStorage.remove()
+        }
+
+        return Promise.reject(error)
+    }
+)
 
 
 export async function getHistory({ before, after, first }: HistoryQuery): Promise<HistoryResponse> {
@@ -39,6 +45,6 @@ export async function getHistory({ before, after, first }: HistoryQuery): Promis
     return res.data
 }
 
-export function transcribeAudio(audioUrl: string, lang?: string): Promise<History> {
-    return api.post<History>("", { audioUrl, lang }).then(response => response.data);
+export function transcribeAudio(req: TranscriptRequest): Promise<History> {
+    return api.post<History>("", req).then(response => response.data);
 }
