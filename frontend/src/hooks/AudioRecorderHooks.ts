@@ -1,7 +1,7 @@
 import { useRef, useState } from "react"
 
-const MAX_DATA_SIZE = 10 * 1024 * 1024 // 10MB
 const MIME_TYPE = "audio/webm"
+const EXTENSTION = "wbem"
 
 export interface AudioRecorderState {
     isRecording: boolean,
@@ -17,21 +17,13 @@ export interface AudioRecorderControl extends AudioRecorderState {
 
 
 export interface AudioRecordOutput {
-    audioRecordUrl?: string,
-    audioRecordBlob?: Blob,
-    totalSeconds: number,
-    mimeType: string
+    blob: Blob,
+    extension: string
 }
 
 export interface AudioRecorderOptions {
 
-    stream?: boolean,
-
-    bufferSize?: number,
-
     onStart?: ()=> void
-
-    onData?: (blob: Blob)=> Promise<void>,
 
     onStop?: (output: AudioRecordOutput)=> Promise<void>
 }
@@ -57,13 +49,12 @@ export function useAudioRecorder(options: AudioRecorderOptions): AudioRecorderCo
     }
 
   
-
     function startRecording() {
 
         new Promise<MediaStream>(async (resolve, reject) => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true
+                    audio: true,
                 })
                 resolve(stream)
             }
@@ -82,15 +73,6 @@ export function useAudioRecorder(options: AudioRecorderOptions): AudioRecorderCo
                 if (data.size > 0) {
                     dataRef.current.push(data)
                     dataSizeRef.current = dataSizeRef.current + data.size
-
-                    if (options.stream && dataSizeRef.current >= Math.min(options.bufferSize ?? MAX_DATA_SIZE, MAX_DATA_SIZE)) {
-                            const blob = combineData()
-                            options.onData?.(blob)
-
-                            // reset
-                            dataRef.current = []
-                            dataSizeRef.current = 0
-                    }
                 }
                 setState(old => ({ ...old, ellapsedSeconds: old.ellapsedSeconds + 1 }))
             })
@@ -108,7 +90,6 @@ export function useAudioRecorder(options: AudioRecorderOptions): AudioRecorderCo
                 stream.getTracks().forEach(t => t.stop())
                 streamRef.current = null
 
-                const currentState = state
                 setState({
                     isRecording: false,
                     ellapsedSeconds: 0,
@@ -116,20 +97,10 @@ export function useAudioRecorder(options: AudioRecorderOptions): AudioRecorderCo
                 })
                 
                 let output: AudioRecordOutput
-                if (options.stream) {
-                    output = {
-                        totalSeconds: currentState.ellapsedSeconds,
-                        mimeType: ""
-                    }
-                }
-                else {
-                    const blob = combineData()
-                    output = {
-                        audioRecordBlob: blob,
-                        audioRecordUrl: URL.createObjectURL(blob),
-                        totalSeconds: currentState.ellapsedSeconds,
-                        mimeType: ""
-                    }
+                const blob = combineData()
+                output = {
+                    blob: blob,
+                    extension: EXTENSTION
                 }
 
                 // clean up 

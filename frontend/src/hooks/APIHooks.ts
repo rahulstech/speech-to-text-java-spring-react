@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getHistory, transcribeAudio } from "../services/SpeechService";
+import { uploadAudioBlob, type AudioStorageData } from "../storage/Firebase";
+import type { History } from "../services/types";
 
 const HISTORY_SIZE = 20
 
@@ -28,8 +30,12 @@ export function useGetInfiniteHistory() {
 
 export function useTranscribeAudio() {
     const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: transcribeAudio,
+    return useMutation<History, Error, { data: AudioStorageData, lang: string | null }>({
+        mutationFn: (variables) => {
+            return uploadAudioBlob(variables.data)
+            .then(audioUrl => transcribeAudio({ audioUrl, lang: variables.lang }))
+
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["history"],

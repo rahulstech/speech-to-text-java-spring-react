@@ -1,4 +1,4 @@
-import type { History } from "../services/SpeechService";
+import type { History } from "../services/types";
 import { formatTimestamp } from "../utils/DateTime";
 import AudioPlayer from "./AudioPlayer";
 

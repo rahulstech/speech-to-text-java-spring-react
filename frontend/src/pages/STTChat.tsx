@@ -343,12 +343,6 @@ export default function STTChat() {
 
       {/* Bottom Bar Controls */}
       <AudioInputBar
-        onTranscribeSuccess={(id, localUrl) => {
-          setLocalRecordings((prev) => ({
-            ...prev,
-            [id]: localUrl,
-          }));
-        }}
         onTranscribeStart={() => setIsTranscribing(true)}
         onTranscribeEnd={() => setIsTranscribing(false)}
       />

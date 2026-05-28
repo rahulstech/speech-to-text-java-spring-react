@@ -1,29 +1,13 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAudioRecorder } from "../hooks/AudioRecorderHooks";
 import { useTranscribeAudio } from "../hooks/APIHooks";
 import Icon from "./Icon";
-
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-const ALLOWED_AUDIO_EXTENSIONS = [".mp3", ".m4a", ".webm", ".wav", ".aac", ".ogg", ".flac"];
-const ALLOWED_AUDIO_MIMETYPES = [
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/mp4",
-  "audio/x-m4a",
-  "audio/webm",
-  "audio/wav",
-  "audio/x-wav",
-  "audio/wave",
-  "audio/aac",
-  "audio/x-aac",
-  "audio/ogg",
-  "application/ogg",
-  "audio/flac",
-  "audio/x-flac"
-];
+import AudioUploader, { type AudioUploadData } from "./AudioUploader";
+import { type AudioStorageData } from "../storage/Firebase";
+import type { History } from "../services/types";
 
 interface AudioInputBarProps {
-  onTranscribeSuccess: (id: number, localUrl: string) => void;
+  onTranscribeSuccess?: (newHistory: History) => void;
   onTranscribeStart: () => void;
   onTranscribeEnd: () => void;
 }
@@ -35,35 +19,34 @@ export default function AudioInputBar({
   onTranscribeEnd,
 }: AudioInputBarProps) {
   const transcribeMutation = useTranscribeAudio();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [language, setLanguage] = useState("detect");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [audioInputError, setAudioInputError] = useState<string | null>(null);
 
   // Sync mutation pending state to parent
   useEffect(() => {
     if (transcribeMutation.isPending) {
       onTranscribeStart();
-      setValidationError(null);
+      setAudioInputError(null);
     } else {
       onTranscribeEnd();
     }
   }, [transcribeMutation.isPending]);
 
-  function handleTranscribe(audioUrl: string) {
-    const selectedLanguage = language === "detect" ? null : language;
-    transcribeMutation.mutate({
-      audioUrl,
-      lang: selectedLanguage,
-    }, {
-      onSuccess(newHistory) {
-        onTranscribeSuccess(newHistory.id, newHistory.audioFile);
-      },
+  function handleTranscribe(data: AudioStorageData) {
+    if (!data.blob) {
+      return;
+    }
 
-      onError(error) {
-        console.error("Transcription failed:", error);
-      },
-    });
-  };
+    const selectedLanguage = language === "detect" ? null : language;
+    transcribeMutation.mutateAsync({
+      data,
+      lang: selectedLanguage,
+    })
+    .then((newHistory) => {
+      onTranscribeSuccess?.(newHistory);
+    })
+    .catch((error) => setAudioInputError(error));
+  }
 
   const {
     isRecording,
@@ -73,17 +56,13 @@ export default function AudioInputBar({
     startRecording,
     stopRecording,
   } = useAudioRecorder({
-    stream: false,
     async onStop(output): Promise<void> {
-      if (output.audioRecordUrl) {
-        const sampleFirebaseUrl = "/audio.mp3"; // TODO: change with uploaded firebase url
-        handleTranscribe(sampleFirebaseUrl);
-      }
+      handleTranscribe(output);
     },
   });
 
   const handleRecordToggle = () => {
-    setValidationError(null);
+    setAudioInputError(null);
     if (isRecording) {
       stopRecording();
     } else {
@@ -91,33 +70,13 @@ export default function AudioInputBar({
     }
   };
 
-  const handleAttachmentClick = () => {
-    fileInputRef.current?.click();
+  const handleUpload = async (data: AudioUploadData) => {
+    setAudioInputError(null);
+    handleTranscribe(data);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValidationError(null);
-    const file = e.target.files?.[0];
-    if (file) {
-      const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-      const isTypeValid = ALLOWED_AUDIO_MIMETYPES.includes(file.type) || ALLOWED_AUDIO_EXTENSIONS.includes(fileExtension);
-
-      if (!isTypeValid) {
-        setValidationError("Unsupported file type. Please upload MP3, M4A, WEBM, WAV, AAC, OGG, or FLAC.");
-        e.target.value = "";
-        return;
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        setValidationError("File is too large. Maximum size allowed is 100MB.");
-        e.target.value = "";
-        return;
-      }
-
-      const sampleFirebaseUrl = "/audio.mp3"; // TODO: change with upload firease url
-      handleTranscribe(sampleFirebaseUrl);
-      e.target.value = "";
-    }
+  const handleValidationError = (errorMsg: string) => {
+    setAudioInputError(errorMsg);
   };
 
   const formatRecordTime = (secs: number) => {
@@ -129,27 +88,18 @@ export default function AudioInputBar({
   return (
     <div className="bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] w-full shrink-0 z-10">
       <div className="max-w-[900px] mx-auto py-4 px-6 flex items-center justify-end gap-3 w-full">
-        {/* Hidden File Input for Audio Selection */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/webm,audio/wav,audio/x-wav,audio/wave,audio/aac,audio/x-aac,audio/ogg,application/ogg,audio/flac,audio/x-flac,.mp3,.m4a,.webm,.wav,.aac,.ogg,.flac"
-          className="hidden"
-        />
-
         {/* Pill Container (Shown when recording, or if there's a recorder error or validation error) */}
-        {(isRecording || isError || validationError) && (
+        {(isRecording || isError || audioInputError) && (
           <div className="flex-1 rounded-full py-3 px-5 flex items-center justify-between gap-3 border bg-red-50 border-red-200 h-12 transition-all">
             {/* Status Text */}
             <span className="text-sm font-semibold text-red-700 pr-2 truncate">
               {isRecording 
                 ? `Recording: ${formatRecordTime(ellapsedSeconds)}` 
-                : (validationError || error?.message || "Microphone error")}
+                : (audioInputError || error?.message || "unknonwn error")}
             </span>
-            {validationError && (
+            {audioInputError && (
               <button 
-                onClick={() => setValidationError(null)}
+                onClick={() => setAudioInputError(null)}
                 className="text-red-500 hover:text-red-700 font-bold px-1.5 py-0.5 rounded-xl hover:bg-red-100 transition-colors text-xs flex items-center justify-center"
                 title="Clear error"
               >
@@ -176,17 +126,11 @@ export default function AudioInputBar({
             <option value="it">Italian</option>
           </select>
 
-          {/* Attachment Button */}
-          <button
-            onClick={handleAttachmentClick}
-            title="Add Audio File"
-            className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 active:scale-95 transition-all focus:outline-none flex items-center justify-center relative group"
-          >
-            <Icon src="/icons/attachment.svg" className="w-6 h-6" colorClass="bg-slate-500" />
-            <span className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50">
-              Add Audio File
-            </span>
-          </button>
+          {/* Audio Uploader */}
+          <AudioUploader
+            onUpload={handleUpload}
+            onValidationError={handleValidationError}
+          />
 
           {/* Mic / Stop Button */}
           <button
