@@ -3,11 +3,15 @@ package com.github.rahulstech.stt.controller;
 import com.github.rahulstech.stt.dto.GenerateTextRequest;
 import com.github.rahulstech.stt.dto.HistoryQuery;
 import com.github.rahulstech.stt.dto.HistoryResponse;
+import com.github.rahulstech.stt.dto.TranscriptionResponse;
+import com.github.rahulstech.stt.error.Forbidden;
 import com.github.rahulstech.stt.model.Transcription;
+import com.github.rahulstech.stt.model.User;
 import com.github.rahulstech.stt.service.SpeechToTextService;
 import com.github.rahulstech.stt.service.TranscriptionService;
+import com.github.rahulstech.stt.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,24 +19,36 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin("*")
 public class SpeechController {
 
-    @Autowired
-    private TranscriptionService transcriptionService;
+    private final UserService userService;
 
-    @Autowired
-    private SpeechToTextService sttService;
+    private final TranscriptionService transcriptionService;
+
+    private final SpeechToTextService sttService;
+
+
+    public SpeechController(
+        UserService userService,
+        TranscriptionService transcriptionService,
+        SpeechToTextService sttService
+    ) {
+        this.userService = userService;
+        this.transcriptionService = transcriptionService;
+        this.sttService = sttService;
+    }
 
     @PostMapping()
-    public Transcription generateTranscript(@Valid @RequestBody GenerateTextRequest body){
+    public TranscriptionResponse generateTranscript(
+            Authentication auth,
+            @Valid @RequestBody GenerateTextRequest body
+    ){
         var future = sttService.transcribeAudio(body.audioUrl(), body.lang());
         future.join();
 
         var response = future.resultNow();
+        var authUser = getAuthUser(auth);
+        var transcription = new Transcription(response.audioUrl(), response.transcript(), authUser);
 
-        var transcription = new Transcription();
-        transcription.setAudioFile(response.audioUrl());
-        transcription.setTranscript(response.transcript());
-
-        return transcriptionService.createTranscription(transcription);
+        return TranscriptionResponse.from(transcriptionService.createTranscription(transcription));
     }
 
     @GetMapping("/{id}")
@@ -42,8 +58,20 @@ public class SpeechController {
 
     @GetMapping("/history")
     public HistoryResponse getHistory(
+            Authentication auth,
             @Valid HistoryQuery query
     ) {
-        return transcriptionService.getTranscriptions(query);
+        var authUser = getAuthUser(auth);
+        return transcriptionService.getTranscriptionsOfUser(authUser.getId(), query);
+    }
+
+    private User getAuthUser(Authentication auth) {
+        try {
+            var userId = Long.valueOf(auth.getName());
+            return userService.getUserById(userId);
+        }
+        catch (Exception ex) {
+            throw new Forbidden("login required");
+        }
     }
 }

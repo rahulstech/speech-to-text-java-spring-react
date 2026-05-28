@@ -2,6 +2,7 @@ package com.github.rahulstech.stt.service;
 
 import com.github.rahulstech.stt.dto.HistoryQuery;
 import com.github.rahulstech.stt.dto.HistoryResponse;
+import com.github.rahulstech.stt.dto.TranscriptionResponse;
 import com.github.rahulstech.stt.model.Transcription;
 import com.github.rahulstech.stt.repository.TranscriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,20 +28,20 @@ public class TranscriptionService {
         return repo.findById(id).orElse(null);
     }
 
-    public HistoryResponse getTranscriptions(HistoryQuery query) {
+    public HistoryResponse getTranscriptionsOfUser(Long userId, HistoryQuery query) {
         var pageable = getHistoryPageRequest(query.first());
         List<Transcription> histories;
         Long cursor;
         if (query.isBefore()) {
-            histories = repo.findByIdGreaterThanEqual(query.before(),pageable);
+            histories = repo.findByUser_IdAndIdGreaterThanEqual(userId, query.before(),pageable);
             cursor = query.before();
         }
         else if (query.isAfter()) {
-            histories = repo.findByIdLessThanEqual(query.after(), pageable);
+            histories = repo.findByUser_IdAndIdLessThanEqual(userId, query.after(), pageable);
             cursor = query.after();
         }
         else {
-            histories = repo.findAll(pageable).toList();
+            histories = repo.findByUser_Id(userId, pageable);
             cursor = null;
         }
 
@@ -62,7 +63,7 @@ public class TranscriptionService {
                 cursorBefore,
                 cursorAfter,
                 query.first(),
-                histories
+                histories.stream().map(TranscriptionResponse::from).toList()
         );
     }
 

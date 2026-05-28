@@ -8,6 +8,6 @@ public record HistoryResponse(
         Long cursorBefore,
         Long cursorAfter,
         int size,
-        List<Transcription> histories
+        List<TranscriptionResponse> histories
 ) {
 }

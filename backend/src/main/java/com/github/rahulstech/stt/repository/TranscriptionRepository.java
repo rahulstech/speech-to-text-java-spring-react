@@ -10,14 +10,29 @@ import java.util.List;
 @Repository
 public interface TranscriptionRepository
         extends JpaRepository<Transcription, Long> {
+    /**
+     * query method name strictly following the column names.
+     * for example: {@link Transcription} has user_id column
+     * therefore method name is
+     * findByUser_IdAndIdGreaterThanEqual (the underscore required)
+     * not
+     * findByUserIdAndIdGreaterThanEqual
+     */
 
-    List<Transcription> findByIdGreaterThanEqual(
+    List<Transcription> findByUser_IdAndIdGreaterThanEqual(
+            Long userId,
             Long id,
             Pageable pageable
     );
 
-    List<Transcription> findByIdLessThanEqual(
+    List<Transcription> findByUser_IdAndIdLessThanEqual(
+            Long userId,
             Long id,
+            Pageable pageable
+    );
+
+    List<Transcription> findByUser_Id(
+            Long userId,
             Pageable pageable
     );
 }

@@ -25,7 +25,7 @@ public class SpeechToTextServiceProdImpl implements SpeechToTextService {
     private final AsyncDeepgramClient client;
 
     public SpeechToTextServiceProdImpl(
-            @Value("${deepgram.api-key}") String apiKey
+            @Value("${DEEPGRAM_API_KEY}") String apiKey
     ) {
         client = AsyncDeepgramClient.builder()
                 .apiKey(apiKey)

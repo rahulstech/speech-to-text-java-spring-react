@@ -23,37 +23,48 @@ public class Transcription {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    public Transcription() {}
+    @ManyToOne(
+            fetch = FetchType.LAZY
+            , optional = false
+            // JPA cascade and sql cascade are different.
+            // also JPA cascade required relation from User to Transcription entity.
+            // that's what db level on delete cascade is safer in this case
+            // ,  cascade = CascadeType.REMOVE
+    )
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    protected Transcription() {
+        // required by JPA
+    }
+
+    public Transcription(String audioFile, String transcript, User user) {
+        this.audioFile = audioFile;
+        this.transcript = transcript;
+        this.user = user;
+    }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getAudioFile() {
         return audioFile;
     }
 
-    public void setAudioFile(String audioFile) {
-        this.audioFile = audioFile;
-    }
-
     public String getTranscript() {
         return transcript;
-    }
-
-    public void setTranscript(String transcript) {
-        this.transcript = transcript;
     }
 
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(OffsetDateTime createdAt) {
-        this.createdAt = createdAt;
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
