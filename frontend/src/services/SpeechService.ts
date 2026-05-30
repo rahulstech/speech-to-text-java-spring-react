@@ -1,9 +1,10 @@
 import axios from "axios";
 import type { HistoryQuery, HistoryResponse, History, TranscriptRequest } from "./types";
 import { accessTokenStorage } from "../storage/TokenStorage";
+import { userStorage } from "../storage/UserStorage";
 
 const api = axios.create({
-    baseURL: "http://localhost:8080/api/speech"
+    baseURL: `${import.meta.env.VITE_API_BASE_URL}/speech`
 })
 
 
@@ -25,6 +26,7 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             accessTokenStorage.remove()
+            userStorage.remove()
         }
 
         return Promise.reject(error)

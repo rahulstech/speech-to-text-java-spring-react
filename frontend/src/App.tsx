@@ -4,8 +4,9 @@ import STTChat from './pages/STTChat';
 import Registration from './pages/Registration';
 import LogIn from './pages/LogIn';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AppContextProvider } from './context/AppContext';
+import { AppContextProvider, useAppContext } from './context/AppContext';
 import ProtectedRouter from './routers/ProtectedRouter';
+import { useEffect } from 'react';
 
 const queryClient = new QueryClient()
 
@@ -36,9 +37,22 @@ const router = createBrowserRouter([
   }
 ])
 
+function TitleUpdater() {
+  const { pageTitle } = useAppContext()
+
+  useEffect(()=> {
+    if (pageTitle) {
+      document.title = pageTitle
+    }
+  }, [pageTitle])
+
+  return null;
+}
+
 export default function App() {
   return (
     <AppContextProvider>
+      <TitleUpdater />
 
       <QueryClientProvider client={queryClient}>
 

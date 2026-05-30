@@ -26,6 +26,11 @@ export interface AudioStorageData {
 }
 
 export async function uploadAudioBlob(data: AudioStorageData): Promise<string> {
+    if (import.meta.env.DEV) {
+        // in development mode return a fake audio url
+        return "/audio.mp3"
+    }
+    
     const name = `${ROOT_DIRECTORY}/${crypto.randomUUID()}.${data.extension}`
     const objectRef = ref(storage, name)
 

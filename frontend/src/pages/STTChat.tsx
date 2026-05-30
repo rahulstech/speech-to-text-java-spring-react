@@ -7,6 +7,7 @@ import type { History } from "../services/types";
 import Waveform from "../components/Waveform";
 import { useUserLogout } from "../hooks/AuthHooks";
 import { userStorage } from "../storage/UserStorage";
+import { useAppContext } from "../context/AppContext";
 
 // Group items by day
 function groupHistoryByDate(items: History[]) {
@@ -71,21 +72,26 @@ export default function STTChat() {
   const prevScrollHeightRef = useRef<number>(0);
   const prevHistoryLengthRef = useRef<number>(0);
   const wasPendingRef = useRef<boolean>(false);
+  const hasNextPageRef = useRef(hasNextPage);
+  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+  const wasFetchingNextPageRef = useRef(false);
+  const { setPageTitle } = useAppContext()
   
   // Maps a database history ID to the locally recorded blob URL
-  const [localRecordings, setLocalRecordings] = useState<{ [id: number]: string }>({});
+  const [localRecordings] = useState<{ [id: number]: string }>({});
 
   const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Flat map pages to list of items, deduplicating by ID to avoid React key collisions during shifting
-  const historyItems = data
-    ? data.pages.flatMap((page) => page.histories).filter((item, index, self) =>
+  const historyItems = data?.pages
+    ? data.pages.flatMap((page) => page?.histories ?? []).filter((item, index, self) =>
         self.findIndex((t) => t.id === item.id) === index
       )
     : [];
 
-  const hasNextPageRef = useRef(hasNextPage);
-  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+    useEffect(()=> {
+      setPageTitle("Chats - Speech to Text")
+    }, [])
 
   useEffect(() => {
     hasNextPageRef.current = hasNextPage;
@@ -118,7 +124,7 @@ export default function STTChat() {
     };
   }, [fetchNextPage]);
 
-  const wasFetchingNextPageRef = useRef(false);
+  
   useEffect(() => {
     if (isFetchingNextPage) {
       wasFetchingNextPageRef.current = true;
@@ -211,7 +217,7 @@ export default function STTChat() {
         <div className="bg-white h-16 border-b border-slate-100 shadow-sm w-full shrink-0 z-10">
           <div className="h-full flex items-center justify-between px-6">
             <h1 className="text-lg font-bold text-slate-800 tracking-tight">
-              Hello {userStorage.get().name}
+              Hello {userStorage?.get()?.name ?? "User"}
             </h1>
             <button
               onClick={()=> { logoutMutation.mutate() }}

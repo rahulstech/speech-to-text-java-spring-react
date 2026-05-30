@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Icon from "../components/Icon";
 import TextInputField from "../components/TextInputField";
 import PasswordInputField from "../components/PasswordInputField";
 import { useUserLogIn } from "../hooks/AuthHooks";
 import ErrorBanner from "../components/ErrorBanner";
 import { Link } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 
 interface LogInFieldError {
@@ -13,6 +14,12 @@ interface LogInFieldError {
 }
 
 export default function LogIn() {
+  const { setPageTitle } = useAppContext()
+
+  useEffect(()=> {
+    setPageTitle("Log In - Speech to Text")
+  }, [])
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<LogInFieldError>({})

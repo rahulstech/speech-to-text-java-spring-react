@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Icon from "../components/Icon";
 import TextInputField from "../components/TextInputField";
 import PasswordInputField from "../components/PasswordInputField";
 import { useUserRegistraiton } from "../hooks/AuthHooks";
 import ErrorBanner from "../components/ErrorBanner";
 import { Link } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 interface RegistrationFieldError {
   name?: string,
@@ -13,6 +14,12 @@ interface RegistrationFieldError {
 }
 
 export default function Registration() {
+  const { setPageTitle } = useAppContext()
+  
+    useEffect(()=> {
+      setPageTitle("Register - Speech to Text")
+    }, [])
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

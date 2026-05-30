@@ -120,10 +120,23 @@ export default function AudioInputBar({
             <option value="detect">Detect Language</option>
             <option value="en">English</option>
             <option value="hi">Hindi</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="it">Italian</option>
+            <option value="as">Assamese</option>
+            <option value="bn">Bengali</option>
+            <option value="gu">Gujarati</option>
+            <option value="kn">Kannada</option>
+            <option value="ks">Kashmiri</option>
+            <option value="kok">Konkani</option>
+            <option value="mai">Maithili</option>
+            <option value="ml">Malayalam</option>
+            <option value="mr">Marathi</option>
+            <option value="ne">Nepali</option>
+            <option value="or">Odia</option>
+            <option value="pa">Punjabi</option>
+            <option value="sa">Sanskrit</option>
+            <option value="sd">Sindhi</option>
+            <option value="ta">Tamil</option>
+            <option value="te">Telugu</option>
+            <option value="ur">Urdu</option>
           </select>
 
           {/* Audio Uploader */}

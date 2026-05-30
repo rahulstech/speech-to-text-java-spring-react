@@ -3,7 +3,7 @@ import type { AuthResponse, UserLoginRequest, UserRegistrationRequest } from "./
 import { APIError } from "./APIError"
 
 const api = axios.create({
-    baseURL: "http://localhost:8080/api/auth"
+    baseURL: `${import.meta.env.VITE_API_BASE_URL}/auth`
 })
 
 export async function userRegistration(req: UserRegistrationRequest): Promise<AuthResponse> {
