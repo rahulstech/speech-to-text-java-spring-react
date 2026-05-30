@@ -18,17 +18,34 @@ public class HttpException extends RuntimeException {
         this(status, List.of(message), null);
     }
 
-    public HttpException(HttpStatus status, String message, Exception reason) {
-        this(status, List.of(message), reason);
-    }
-
-    public HttpException(HttpStatus status, List<String> messages) {
-        this(status, messages, null);
-    }
-
     public HttpException(HttpStatus status, List<String> messages, Exception reason) {
         super(reason);
         this.status = status;
         this.messages = Collections.unmodifiableList(messages);
+    }
+
+
+    // Http 4xx
+
+    public static HttpException unauthorized(String message) {
+        return new HttpException(HttpStatus.UNAUTHORIZED, message);
+    }
+
+    public static HttpException conflict(String message) {
+        return new HttpException(HttpStatus.CONFLICT, message);
+    }
+
+    public static HttpException notFound(String message) {
+        return new HttpException(HttpStatus.NOT_FOUND, message);
+    }
+
+    public static HttpException forbidden(String message) {
+        return new HttpException(HttpStatus.FORBIDDEN, message);
+    }
+
+    // Http 5xx
+
+    public static HttpException internalError() {
+        return new HttpException(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

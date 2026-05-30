@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin("*")
+//@CrossOrigin("*") // SecurityConfiguration adds cors configuration, not explicitly required here
 public class AuthController {
 
-    private UserService userService;
-    private JWTService jwtService;
+    private final UserService userService;
+    private final JWTService jwtService;
 
     public AuthController(UserService service, JWTService jwtService) {
         this.userService = service;

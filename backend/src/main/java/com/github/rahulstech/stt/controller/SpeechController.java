@@ -4,7 +4,7 @@ import com.github.rahulstech.stt.dto.GenerateTextRequest;
 import com.github.rahulstech.stt.dto.HistoryQuery;
 import com.github.rahulstech.stt.dto.HistoryResponse;
 import com.github.rahulstech.stt.dto.TranscriptionResponse;
-import com.github.rahulstech.stt.error.Forbidden;
+import com.github.rahulstech.stt.error.HttpException;
 import com.github.rahulstech.stt.model.Transcription;
 import com.github.rahulstech.stt.model.User;
 import com.github.rahulstech.stt.service.SpeechToTextService;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/speech")
-@CrossOrigin("*")
+//@CrossOrigin("*") // SecurityConfiguration adds cors configuration, not explicitly required here
 public class SpeechController {
 
     private final UserService userService;
@@ -71,7 +71,7 @@ public class SpeechController {
             return userService.getUserById(userId);
         }
         catch (Exception ex) {
-            throw new Forbidden("login required");
+            throw HttpException.forbidden("login required");
         }
     }
 }

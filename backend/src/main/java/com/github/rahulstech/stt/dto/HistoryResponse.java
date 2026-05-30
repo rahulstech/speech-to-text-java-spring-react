@@ -1,7 +1,5 @@
 package com.github.rahulstech.stt.dto;
 
-import com.github.rahulstech.stt.model.Transcription;
-
 import java.util.List;
 
 public record HistoryResponse(
@@ -9,5 +7,4 @@ public record HistoryResponse(
         Long cursorAfter,
         int size,
         List<TranscriptionResponse> histories
-) {
-}
+) {}

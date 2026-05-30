@@ -13,7 +13,7 @@ public class JWTService {
 
     private static final long ACCESS_TOKEN_EXPIRY_SECONDS = 3600 * 24; // 1 day
 
-    private JwtEncoder jwtEncoder;
+    private final JwtEncoder jwtEncoder;
 
     public JWTService(JwtEncoder jwtEncoder) {
         this.jwtEncoder = jwtEncoder;

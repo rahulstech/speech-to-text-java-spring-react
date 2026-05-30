@@ -5,7 +5,6 @@ import com.github.rahulstech.stt.dto.HistoryResponse;
 import com.github.rahulstech.stt.dto.TranscriptionResponse;
 import com.github.rahulstech.stt.model.Transcription;
 import com.github.rahulstech.stt.repository.TranscriptionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -17,8 +16,11 @@ public class TranscriptionService {
 
     public static final int MAX_PAGE_SIZE = 20;
 
-    @Autowired
-    private TranscriptionRepository repo;
+    private final TranscriptionRepository repo;
+
+    public TranscriptionService(TranscriptionRepository repo) {
+        this.repo = repo;
+    }
 
     public Transcription createTranscription(Transcription transcription){
         return repo.save(transcription);
@@ -68,6 +70,9 @@ public class TranscriptionService {
     }
 
     private PageRequest getHistoryPageRequest(int limit) {
-        return PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+        return PageRequest.of(0,
+                Math.min(limit, MAX_PAGE_SIZE),
+                Sort.by(Sort.Direction.DESC, "createdAt", "id")
+        );
     }
 }

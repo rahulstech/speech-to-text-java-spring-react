@@ -3,7 +3,15 @@ package com.github.rahulstech.stt.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "unique_users_email",
+                        columnNames = "email"
+                )
+        }
+)
 public class User {
 
     @Id
@@ -13,7 +21,7 @@ public class User {
     @Column(length = 100, nullable = false)
     private String name;
 
-    @Column(length = 300, nullable = false, unique = true)
+    @Column(length = 300, nullable = false)
     private String email;
 
     @Column(name = "password_hash", length = 64, nullable = false)

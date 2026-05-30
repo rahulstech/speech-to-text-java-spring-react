@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,19 +31,24 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.List;
 
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain getSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain getSecurityFilterChain(
+            HttpSecurity http,
+            /* corsOrigins are set in environment variables in application.properties */
+            @Value("${CORS_ALLOWED_ORIGINS}") List<String> corsOrigins
+    ) throws Exception {
         http
                 .authorizeHttpRequests(auth ->
                         auth
                                 // NOTE: must allow all preflight requests from browser. even then protected endpoints too.
                                 // preflight i.e. http options requests usually don't contain any bearer token,
-                                // if i don't exclude those requests then requests with valid bearer token will also fail
+                                // if I don't exclude those requests then requests with valid bearer token will also fail
                                 .requestMatchers(
                                         HttpMethod.OPTIONS,
                                         "/api/**"
@@ -62,6 +69,18 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 -> {
                     oauth2.jwt(Customizer.withDefaults());
+                })
+                .cors(corsConfigurer -> {
+                    // TODO: improve cors configuration
+                    CorsConfiguration corsConfiguration = new CorsConfiguration();
+                    corsConfiguration.setAllowedOrigins(corsOrigins);
+                    corsConfiguration.setAllowedMethods(List.of("*"));
+                    corsConfiguration.setAllowedHeaders(List.of("*"));
+
+                    UrlBasedCorsConfigurationSource configurationSource = new UrlBasedCorsConfigurationSource();
+                    configurationSource.registerCorsConfiguration("/api/**", corsConfiguration);
+
+                    corsConfigurer.configurationSource(configurationSource);
                 })
                 .csrf(it -> it.disable()) // stateless idToken authentication does not require csrf
                 .formLogin(it -> it.disable()) // api server don't need form login
@@ -102,13 +121,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public RSAPublicKey loadPublicKey(@Value("${jwt.public-key}") String path) throws Exception {
-        String key = Files.readString(Path.of(path))
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
+    public RSAPublicKey loadPublicKey(@Value("${JWT_PUBLIC_KEY}") String base64PublicKey) throws Exception {
 
-        byte[] decoded = Base64.getDecoder().decode(key);
+        byte[] decoded = Base64.getDecoder().decode(base64PublicKey);
 
         X509EncodedKeySpec spec = new X509EncodedKeySpec(decoded);
 
@@ -118,13 +133,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public RSAPrivateKey loadPrivateKey(@Value("${jwt.private-key}") String path) throws Exception {
-        String key = Files.readString(Path.of(path))
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s+", "");
-
-        byte[] decoded = Base64.getDecoder().decode(key);
+    public RSAPrivateKey loadPrivateKey(@Value("${JWT_PRIVATE_KEY}") String base64PrivateKey) throws Exception {
+        byte[] decoded = Base64.getDecoder().decode(base64PrivateKey);
 
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
 
